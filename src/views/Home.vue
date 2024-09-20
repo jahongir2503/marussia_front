@@ -6,22 +6,30 @@
           <h1>Marussia <span class="highlight">B1</span></h1>
           <p>От 49.999 $</p>
         </div>
-        <MyButton class="promo-button">Подробнее</MyButton>
+        <router-link to="/models/1" class="btn-link">
+          <MyButton class="promo-button">Подробнее</MyButton>
+        </router-link>
       </div>
     </main>
     <ModelRange  class="model-range"/>
+    <Services/>
+    <News/>
   </div>
 </template>
 
 <script>
 import ModelRange from "@/components/ModelRange.vue";
 import MyButton from "@/components/UI/Button.vue";
+import Services from "@/components/Services.vue";
+import News from "@/components/News.vue";
 
 export default {
   name: "Home",
   components: {
+    News,
+    Services,
     ModelRange,
-    MyButton
+    MyButton,
   }
 };
 </script>
@@ -38,6 +46,7 @@ main {
   align-items: center;
   position: relative;
 }
+
 
 
 .car-promo {

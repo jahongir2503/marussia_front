@@ -8,7 +8,9 @@
         <p>От <span class="price">{{ car.price }}</span></p>
         <div class="buttons">
           <MyButton>Купить</MyButton>
-          <MyButton>Подробнее</MyButton>
+          <router-link :to="`/models/${car.id}`" class="btn-link">
+            <MyButton>Подробнее</MyButton>
+          </router-link>
         </div>
       </div>
     </div>
