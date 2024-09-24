@@ -2,12 +2,12 @@
   <div id="app">
     <Header />
     <router-view />
-    <Footer/>
+    <Footer />
   </div>
 </template>
 
 <script>
-import Header from './components/Header.vue';
+import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 
 export default {
@@ -16,11 +16,15 @@ export default {
     Footer,
     Header,
   },
+  data() {
+
+  },
+
 };
 </script>
 
 <style>
-*{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;

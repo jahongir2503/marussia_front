@@ -2,7 +2,7 @@
   <section class="services">
     <h2>Услуги для владельцев</h2>
     <div class="service-cards">
-      <router-link to="/registration" class="service-card">
+      <router-link to="/service" class="service-card">
         <img src="#" alt="Регистрация на ТО" />
         <p>Регистрация на Т.О.</p>
       </router-link>
