@@ -5,52 +5,30 @@
     </router-link>
     <nav>
       <ul>
-        <li><router-link to="/">Модели</router-link></li>
         <li><router-link to="/stock">Автомобили в наличии</router-link></li>
         <li><router-link to="/details">Детали</router-link></li>
         <li><router-link to="/services">Услуги</router-link></li>
-        <li><router-link to="/about">О нас</router-link></li>
-
-        <li v-if="isAuthenticated">
-          <router-link :to="`/profile/${user.id}`">{{ user.name }}</router-link>
-        </li>
-
+        <li><router-link to="/AboutUs">О нас</router-link></li>
+        <li v-if="!isAuthenticated"><a href="#" @click.prevent="showLoginModal = true">Войти</a></li>
         <li v-else>
-          <a href="#" @click.prevent="showLoginModal = true">Войти</a>
+          <router-link to="/profile">Профиль</router-link> <br>
+          <a href="#" @click.prevent="logout">Выйти</a>
         </li>
       </ul>
     </nav>
 
-
+    <!-- Модальное окно для входа -->
     <Modal :isVisible="showLoginModal" @close="showLoginModal = false">
       <h2 class="modal-title">Login</h2>
       <form @submit.prevent="login">
         <input type="email" v-model="email" placeholder="Email" class="modal-input" required />
         <input type="password" v-model="password" placeholder="Password" class="modal-input" required />
-        <div v-if="loginError" class="error-message">{{ loginError }}</div> <!-- Сообщение об ошибке входа -->
         <button type="submit" class="modal-button">Login</button>
+        <p v-if="loginError" class="error-message">{{ loginError }}</p>
       </form>
       <div class="modal-footer">
-        <a href="#" @click.prevent="openRegisterModal">Registration</a>
+        <router-link to="/Register">Регистрация</router-link>
         <router-link to="/forgot-password">Forgot your password?</router-link>
-      </div>
-    </Modal>
-
-
-    <Modal :isVisible="showRegisterModal" @close="showRegisterModal = false">
-      <h2 class="modal-title">Registration</h2>
-      <form @submit.prevent="register">
-        <input type="text" v-model="name" placeholder="Name" class="modal-input" required />
-        <input type="text" v-model="surname" placeholder="Surname" class="modal-input" required />
-        <input type="text" v-model="patronymic" placeholder="Patronymic" class="modal-input" required />
-        <input type="text" v-model="phoneNumber" placeholder="Phone Number" class="modal-input" required />
-        <input type="email" v-model="email" placeholder="Email" class="modal-input" required />
-        <input type="password" v-model="password" placeholder="Password" class="modal-input" required />
-        <div v-if="registrationError" class="error-message">{{ registrationError }}</div>
-        <button type="submit" class="modal-button">Register</button>
-      </form>
-      <div class="modal-footer">
-        <a href="#" @click.prevent="openLoginModal">Уже есть аккаунт? Войти</a>
       </div>
     </Modal>
   </header>
@@ -58,101 +36,52 @@
 
 <script>
 import Modal from "@/components/UI/Modal.vue";
-import apiClient from '@/axios';
+import axios from "axios";
 
 export default {
   components: {
-    Modal,
+    Modal
   },
   data() {
     return {
       showLoginModal: false,
-      showRegisterModal: false,
       email: '',
       password: '',
-      name: '',
-      surname: '',
-      patronymic: '',
-      phoneNumber: '',
-      user: null,
       loginError: '',
-      registrationError: '',
+      isAuthenticated: false,
     };
   },
-  computed: {
-    isAuthenticated() {
-      return !!this.user;
-    }
-  },
   methods: {
-    async login() {
-      try {
-        const response = await apiClient.post('/login', {
-          email: this.email,
-          password: this.password
-        });
-        localStorage.setItem('token', response.data.token);
-        this.fetchUserProfile();
-        this.showLoginModal = false;
-        this.loginError = '';
-      } catch (error) {
-        if (error.response && error.response.status === 422) {
-          this.loginError = 'Неверные данные для входа';
-        } else {
-          this.loginError = 'Произошла ошибка. Попробуйте позже.';
-        }
-      }
+    login() {
+      axios
+          .post("http://127.0.0.1:8000/api/authorization", {
+            email: this.email,
+            password: this.password,
+          })
+          .then((response) => {
+            const token = response.data.token;
+            localStorage.setItem("token", token); // Сохраняем токен в localStorage
+            this.isAuthenticated = true;
+            this.showLoginModal = false;
+            this.loginError = '';
+          })
+          .catch((error) => {
+            this.loginError = "Ошибка авторизации. Проверьте данные.";
+          });
     },
-    async register() {
-      try {
-        const response = await apiClient.post('/register', {
-          name: this.name,
-          surname: this.surname,
-          patronymic: this.patronymic,
-          phone: this.phoneNumber,
-          email: this.email,
-          password: this.password
-        });
-        localStorage.setItem('token', response.data.token);
-        this.fetchUserProfile();
-        this.showRegisterModal = false;
-        this.registrationError = '';
-      } catch (error) {
-        if (error.response && error.response.status === 422) {
-          this.registrationError = 'Неверные данные для регистрации';
-        } else {
-          this.registrationError = 'Произошла ошибка. Попробуйте позже.';
-        }
-      }
+    logout() {
+      localStorage.removeItem("token"); // Удаляем токен из localStorage
+      this.isAuthenticated = false; // Обновляем статус авторизации
+      this.$router.push('/'); // Перенаправляем на главную страницу
     },
-    async fetchUserProfile() {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get('/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        this.user = response.data;
-      } catch (error) {
-        console.error('Ошибка при получении данных профиля', error);
-      }
+    checkAuth() {
+      const token = localStorage.getItem("token");
+      this.isAuthenticated = !!token;
     },
-    openRegisterModal() {
-      this.showLoginModal = false;
-      this.showRegisterModal = true;
-    },
-    openLoginModal() {
-      this.showRegisterModal = false;
-      this.showLoginModal = true;
-    }
   },
-  mounted() {
-    const token = localStorage.getItem('token');
-    if (token) {
-      this.fetchUserProfile();
-    }
-  }
+  created() {
+    this.checkAuth(); // Проверяем авторизацию при загрузке компонента
+  },
 };
 </script>
 
