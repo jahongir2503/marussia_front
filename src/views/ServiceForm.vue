@@ -1,155 +1,120 @@
 <template>
-  <section class="service-form">
-    <h2>Запись на сервис</h2>
+  <div class="service-form-page">
+    <h1>Выберите услуги для автомобиля</h1>
+
+    <!-- Уведомления об ошибках или успешных действиях -->
+    <div v-if="messages.length" class="messages">
+      <p v-for="(message, index) in messages" :key="index" :class="message.type">{{ message.text }}</p>
+    </div>
+
     <form @submit.prevent="submitForm">
-      <div class="form-group">
-        <label for="surname">Фамилия</label>
-        <input type="text" id="surname" v-model="form.surname" required />
-      </div>
+      <!-- Список услуг из БД -->
+      <label for="service">Услуга</label>
+      <select id="service" v-model="form.serviceId" required>
+        <option v-for="service in services" :key="service.id" :value="service.id">
+          {{ service.name }} ({{ service.price }} ₽)
+        </option>
+      </select>
 
-      <div class="form-group">
-        <label for="name">Имя</label>
-        <input type="text" id="name" v-model="form.name" required />
-      </div>
-
-      <div class="form-group">
-        <label for="middleName">Отчество</label>
-        <input type="text" id="middleName" v-model="form.middleName" required />
-      </div>
-
-      <div class="form-group">
-        <label for="phone">Телефон</label>
-        <input type="tel" id="phone" v-model="form.phone" required />
-      </div>
-
-      <div class="form-group">
-        <label for="email">Почта</label>
-        <input type="email" id="email" v-model="form.email" required />
-      </div>
-
-      <div class="form-group">
-        <label for="carModel">Модель авто</label>
-        <select id="carModel" v-model="form.carModel" required>
-          <option disabled value="">Выберите модель автомобиля</option>
-          <option v-for="car in carModels" :key="car.id" :value="car.name">
-            {{ car.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="service">Услуга</label>
-        <select id="service" v-model="form.service" required>
-          <option disabled value="">Выберите услугу</option>
-          <option v-for="service in services" :key="service.id" :value="service.name">
-            {{ service.name }}
-          </option>
-        </select>
-      </div>
-
-      <MyButton type="submit">Оставить Заявку</MyButton>
+      <MyButton class="btn" type="submit">Оставить Заявку</MyButton>
     </form>
-  </section>
+  </div>
 </template>
 
 <script>
-import MyButton from "@/components/UI/Button.vue";
+import apiClient from '@/axios';
+import MyButton from '@/components/UI/Button.vue';
 
 export default {
-  name: "ServiceForm",
   components: {
     MyButton,
   },
   data() {
     return {
       form: {
-        surname: "",
-        name: "",
-        middleName: "",
-        phone: "",
-        email: "",
-        carModel: "",
-        service: "",
+        serviceId: '', // ID выбранной услуги
       },
-      carModels: [
-        { id: 1, name: "Marussia B1" },
-        { id: 2, name: "Marussia B2" }
-      ],
-      services: [] // Услуги будут загружаться из API
+      services: [], // Список сервисов из БД
+      messages: [], // Сообщения об ошибках/успехах
     };
+  },
+  mounted() {
+    this.fetchServices(); // Загружаем список услуг при загрузке страницы
   },
   methods: {
     async fetchServices() {
       try {
-        const response = await fetch('/api/services'); // Пример запроса на API
-        const data = await response.json();
-        this.services = data;
+        const token = localStorage.getItem('token');
+        const response = await apiClient.get('/service', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        this.services = response.data.data;
       } catch (error) {
-        console.error("Ошибка при получении списка услуг", error);
+        console.error('Ошибка при получении услуг:', error);
+        this.addMessage('Не удалось загрузить список услуг.', 'error');
       }
     },
-    submitForm() {
-      console.log("Форма отправлена", this.form);
-      // Здесь добавляем логику отправки данных на сервер
-    }
+    async submitForm() {
+      try {
+        const token = localStorage.getItem('token');
+        const requestId = localStorage.getItem('request_id'); // Получаем ранее созданный реквест
+
+        const requestData = {
+          request_id: requestId,
+          service_id: this.form.serviceId,
+        };
+
+        const response = await apiClient.post(
+            '/service_in_request',
+            requestData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+        );
+
+        this.addMessage('Заявка успешно отправлена!', 'success');
+        console.log('Заявка успешно отправлена:', response.data);
+      } catch (error) {
+        console.error('Ошибка при отправке формы:', error);
+        this.addMessage('Ошибка при отправке заявки. Попробуйте позже.', 'error');
+      }
+    },
+    addMessage(text, type) {
+      this.messages.push({ text, type });
+      setTimeout(() => {
+        this.messages.shift();
+      }, 5000);
+    },
   },
-  mounted() {
-    this.fetchServices(); // Загружаем список услуг при монтировании компонента
-  }
 };
 </script>
+
 <style scoped>
-.service-form {
-  text-align: center;
-  color: #ffffff;
-  margin-top: 75px;
-  background: black;
-}
-
-.service-form h2 {
-  font-size: 3vw;
-  margin-bottom: 30px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  font-size: 1.2vw;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.form-group input,
-.form-group select {
-  width: 80%;
-  padding: 10px;
-  font-size: 1.2vw;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background-color: white;
-  color: black;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: red;
-}
-
-button[type="submit"] {
-  width: 50%;
-  padding: 15px;
-  font-size: 1.5vw;
-  border-radius: 5px;
-  border: none;
-  background-color: red;
+.service-form-page {
+  padding: 70px;
+  background-color: black;
   color: white;
-  cursor: pointer;
+  text-align: center;
 }
 
-button[type="submit"]:hover {
-  background-color: darkred;
+form label {
+  margin-top: 10px;
+}
+
+form select {
+  margin: 10px 0;
+  padding: 10px;
+  width: 300px;
+  font-size: 16px;
+}
+
+.btn {
+  margin-top: 20px;
+  padding: 10px 78px;
 }
 </style>

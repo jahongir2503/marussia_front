@@ -4,12 +4,12 @@
 
     <div v-if="cars.length" class="car-list">
       <div v-for="car in cars" :key="car.id" class="car-card">
-        <h3>{{ car.model }}</h3>
-        <p>Цена: {{ car.price }} ₽</p>
-        <img :src="car.image" alt="Car image" />
+        <img :src="car.image" alt="Car image" class="car-image" />
+        <h3>{{ car.name }}</h3> <!-- Используем поле name как модель автомобиля -->
+        <p>От <span class="price">{{ car.price }} $</span></p>
         <div class="buttons">
-          <button @click="showDetails(car.id)">Подробнее</button>
-          <button @click="buyCar(car.id)">Купить</button>
+          <MyButton @click="buyCar(car.id)" label="Buy">Купить</MyButton>
+          <MyButton @click="showDetails(car.id)" label="More">Подробнее</MyButton>
         </div>
       </div>
     </div>
@@ -21,46 +21,64 @@
 </template>
 
 <script>
-import apiClient from '@/axios'; // Используем настроенный клиент API
+import apiClient from '@/axios';
+import MyButton from '@/components/UI/Button.vue'; // Используем кастомную кнопку
 
 export default {
+  components: {
+    MyButton
+  },
   data() {
     return {
-      cars: [], // Массив с машинами из API
+      cars: [], // Массив с машинами
     };
   },
   mounted() {
-    this.fetchCars();
+    this.fetchCarsInStock();
   },
   methods: {
-    async fetchCars() {
+    async fetchCarsInStock() {
       try {
-        const token = localStorage.getItem('token'); // Получаем токен из localStorage
+        const token = localStorage.getItem('token');
+        // Получаем машины в наличии
         const response = await apiClient.get('/car_in_stock', {
           headers: {
-            Authorization: `Bearer ${token}`, // Передаём токен в заголовке
+            Authorization: `Bearer ${token}`,
           },
         });
-        this.cars = response.data;
+        const carsInStock = response.data.data;
+
+        // Для каждой машины получаем информацию по car_id из таблицы cars
+        for (const car of carsInStock) {
+          const carDetails = await this.fetchCarDetails(car.car_id);
+          this.cars.push({
+            ...carDetails, // Добавляем модель (name), изображение и другие данные
+            price: car.price, // Добавляем цену из car_in_stock
+          });
+        }
       } catch (error) {
         console.error('Ошибка при получении данных о машинах:', error);
+      }
+    },
+    async fetchCarDetails(carId) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await apiClient.get(`/cars/${carId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Ошибка при получении данных о машине с ID ${carId}:`, error);
+        return {};
       }
     },
     showDetails(carId) {
       this.$router.push({ name: 'CarDetails', params: { id: carId } }); // Переход на страницу деталей
     },
-    async buyCar(carId) {
-      try {
-        const token = localStorage.getItem('token'); // Получаем токен из localStorage
-        const response = await apiClient.post('/buy_car', { car_id: carId }, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Передаём токен в заголовке
-          },
-        });
-        console.log('Покупка успешна:', response.data);
-      } catch (error) {
-        console.error('Ошибка при покупке автомобиля:', error);
-      }
+    buyCar(carId) {
+      this.$router.push({ name: 'BuyCarForm', params: { id: carId } }); // Переход на форму покупки
     }
   }
 };
@@ -68,7 +86,7 @@ export default {
 
 <style scoped>
 .cars-in-stock-page {
-  padding: 20px;
+  padding: 215px;
   background-color: black;
   color: white;
   text-align: center;
@@ -88,30 +106,32 @@ export default {
   border-radius: 10px;
   width: 300px;
   text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.car-card img {
+.car-card h3 {
+  font-size: 1.5rem;
+}
+
+.car-card p {
+  margin: 10px 0;
+}
+
+.car-card .price {
+  color: #ff3333;
+  font-weight: bold;
+}
+
+.car-image {
   width: 100%;
   height: auto;
+  border-radius: 8px;
 }
 
 .buttons {
+  display: flex;
+  justify-content: space-between;
   margin-top: 15px;
-}
-
-button {
-  background-color: #ff3333;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 18px;
-  margin: 5px;
-}
-
-button:hover {
-  background-color: #ff6666;
 }
 
 .no-cars-message {

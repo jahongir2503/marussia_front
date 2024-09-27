@@ -6,8 +6,8 @@
     <nav>
       <ul>
         <li><router-link to="/stock">Автомобили в наличии</router-link></li>
+        <li><router-link to="/car-select">Услуги</router-link></li>
         <li><router-link to="/details">Детали</router-link></li>
-        <li><router-link to="/services">Услуги</router-link></li>
         <li><router-link to="/AboutUs">О нас</router-link></li>
         <li v-if="!isAuthenticated"><a href="#" @click.prevent="showLoginModal = true">Войти</a></li>
         <li v-else>
@@ -60,7 +60,9 @@ export default {
           })
           .then((response) => {
             const token = response.data.token;
+            const userId = response.data.user_id;
             localStorage.setItem("token", token); // Сохраняем токен в localStorage
+            localStorage.setItem("user_id", userId); // Сохраняем токен в localStorage
             this.isAuthenticated = true;
             this.showLoginModal = false;
             this.loginError = '';

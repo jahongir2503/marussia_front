@@ -54,7 +54,7 @@ export default {
 .about-us {
   text-align: center;
   color: white;
-  margin: 100px auto;
+  margin: 75px auto;
   max-width: 100%;
   background-color: black;
 }

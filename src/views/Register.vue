@@ -38,7 +38,7 @@
         <span v-if="errors.password" class="error">{{ errors.password[0] }}</span>
       </div>
 
-      <button type="submit">Зарегистрироваться</button>
+      <MyButton class="btn" type="submit">Зарегистрироваться</MyButton>
     </form>
   </div>
 </template>
@@ -46,12 +46,14 @@
 <script>
 import Header from '@/components/Header.vue';
 import Footer from '@/components/Footer.vue';
+import MyButton from '@/components/UI/Button.vue'
 import apiClient from '@/axios'; // Подключаем настроенный axios
 
 export default {
   components: {
     Header,
     Footer,
+    MyButton
   },
   data() {
     return {
@@ -131,17 +133,5 @@ input {
   font-size: 14px;
 }
 
-button {
-  background-color: #ff3333;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 18px;
-}
 
-button:hover {
-  background-color: #ff6666;
-}
 </style>
