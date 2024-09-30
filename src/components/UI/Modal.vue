@@ -44,6 +44,7 @@ export default {
   max-width: 100%;
   border-radius: 10px;
   position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
 }
 
 .close-button {

@@ -1,97 +1,94 @@
 <template>
-  <section class="news">
-    <h2>Новости</h2>
-    <div class="news-cards">
-      <div class="news-card" v-for="newsItem in news" :key="newsItem.id">
-        <img :src="newsItem.image" :alt="newsItem.title" class="news-image" />
-        <p class="news-date">{{ newsItem.date }}</p>
-        <h3>{{ newsItem.title }}</h3>
-        <p class="news-description">{{ newsItem.description }}</p>
+  <div class="news">
+    <h1>Новости</h1>
+    <div class="news-grid">
+      <div class="news-item" v-for="item in news" :key="item.id">
+        <!-- Проверка наличия изображения, если нет, показываем заглушку -->
+        <img
+            :src="item.image ? getImageUrl(item.image) : getPlaceholderImage()"
+            alt="news image"
+            class="news-image"
+        />
+        <div class="news-date">
+          {{ formatDate(item.created_at) }}
+        </div>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.description }}</p>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script>
+import apiClient from '@/axios'; // Подключаем axios для запросов
+
 export default {
-  name: "News",
   data() {
     return {
-      news: [
-        {
-          id: 1,
-          date: "11.04.2005",
-          title: "Marussia Unveils New Supercar Concept at Geneva Motor Show",
-          description:
-              "Russian luxury car manufacturer Marussia has stunned the automotive world with the unveiling of its latest supercar concept at the Geneva Motor Show.",
-          image: require('@/assets/car-image.png')
-        },
-        {
-          id: 2,
-          date: "11.04.2005",
-          title: "Marussia Partners with Formula 1 Team to Develop High-Performance Road Car",
-          description:
-              "Marussia has announced a partnership with the Renault F1 Team to develop a new high-performance road car.",
-          image: require('@/assets/car-image.png')
-        },
-        {
-          id: 3,
-          date: "11.04.2005",
-          title: "Marussia Expands Global Presence with New Dealership in Dubai",
-          description:
-              "Marussia has announced the opening of its first dealership in Dubai, marking a significant expansion of its global presence.",
-          image: require('@/assets/car-image.png')
-        },
-      ],
+      news: [] // Массив для хранения новостей
     };
   },
+  created() {
+    this.fetchNews(); // Загружаем новости при инициализации компонента
+  },
+  methods: {
+    // Метод для загрузки новостей с сервера
+    async fetchNews() {
+      try {
+        const response = await apiClient.get('/news'); // Делаем запрос на сервер
+        this.news = response.data.data; // Сохраняем полученные данные в массив
+      } catch (error) {
+        console.error('Ошибка при получении новостей:', error);
+      }
+    },
+    // Метод для форматирования даты
+    formatDate(date) {
+      const options = {year: 'numeric', month: 'long', day: 'numeric'};
+      return new Date(date).toLocaleDateString('en-GB', options);
+    },
+    // Получаем ссылку на изображение с сервера
+    getImageUrl(imagePath) {
+      return `http://localhost:8000/storage/${imagePath}`; // Путь к изображениям на сервере
+    },
+    // Получаем заглушку, если нет изображения
+    getPlaceholderImage() {
+      return require('@/assets/placeholder.png'); // Путь к заглушке
+    }
+  }
 };
 </script>
 
 <style scoped>
 .news {
+  padding: 60px 0;
   text-align: center;
-  background-color: black;
   color: white;
-  padding: 50px 0;
+  background-color: black;
 }
 
-.news h2 {
-  font-size: 3vw;
-  margin-bottom: 40px;
-}
-
-.news-cards {
+.news-grid {
   display: flex;
   justify-content: center;
-  gap: 3vw;
+  gap: 30px;
+  flex-wrap: wrap;
 }
 
-.news-card {
-  width: 25vw;
-  text-align: left;
-  color: white;
+.news-item {
+  width: 300px;
+  padding: 20px;
 }
 
 .news-image {
   width: 100%;
-  height: auto;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
   margin-bottom: 15px;
 }
 
 .news-date {
-  font-size: 0.9vw;
-  color: gray;
+  font-size: 14px;
+  color: #666;
   margin-bottom: 10px;
-}
-
-.news h3 {
-  font-size: 1.4vw;
-  margin-bottom: 10px;
-}
-
-.news-description {
-  font-size: 1vw;
-  color: white;
 }
 </style>

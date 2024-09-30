@@ -61,8 +61,10 @@ export default {
           .then((response) => {
             const token = response.data.token;
             const userId = response.data.user_id;
-            localStorage.setItem("token", token); // Сохраняем токен в localStorage
-            localStorage.setItem("user_id", userId); // Сохраняем токен в localStorage
+            const role_id = response.data.role_id;
+            localStorage.setItem("token", token);
+            localStorage.setItem("user_id", userId);
+            localStorage.setItem('role_id', response.data.role_id);
             this.isAuthenticated = true;
             this.showLoginModal = false;
             this.loginError = '';
@@ -72,7 +74,9 @@ export default {
           });
     },
     logout() {
-      localStorage.removeItem("token"); // Удаляем токен из localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('role_id');
       this.isAuthenticated = false; // Обновляем статус авторизации
       this.$router.push('/'); // Перенаправляем на главную страницу
     },

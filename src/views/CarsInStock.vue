@@ -2,7 +2,14 @@
   <div class="cars-in-stock-page">
     <h1>Машины в наличии</h1>
 
-    <div v-if="cars.length" class="car-list">
+    <!-- Проверка на авторизацию -->
+    <div v-if="!isAuthorized" class="authorization-message">
+      <p>Пожалуйста, авторизуйтесь, чтобы увидеть доступные автомобили.</p>
+    </div>
+
+    <!-- Список машин -->
+    <div v-else-if="isLoading" class="loading-placeholder">Загрузка...</div>
+    <div v-else-if="cars.length" class="car-list">
       <div v-for="car in cars" :key="car.id" class="car-card">
         <img :src="car.image" alt="Car image" class="car-image" />
         <h3>{{ car.name }}</h3> <!-- Используем поле name как модель автомобиля -->
@@ -14,6 +21,7 @@
       </div>
     </div>
 
+    <!-- Сообщение, если машин нет -->
     <div v-else class="no-cars-message">
       <p>На данный момент автомобилей в наличии нет.</p>
     </div>
@@ -26,48 +34,52 @@ import MyButton from '@/components/UI/Button.vue'; // Используем ка�
 
 export default {
   components: {
-    MyButton
+    MyButton,
   },
   data() {
     return {
       cars: [], // Массив с машинами
+      isLoading: true, // Индикатор загрузки
+      isAuthorized: false, // Статус авторизации пользователя
     };
   },
   mounted() {
-    this.fetchCarsInStock();
+    this.checkAuthorization(); // Проверяем авторизацию при монтировании
+    if (this.isAuthorized) {
+      this.fetchCarsInStock();
+    }
   },
   methods: {
+    checkAuthorization() {
+      const token = localStorage.getItem('token');
+      this.isAuthorized = !!token; // Если токен есть, пользователь авторизован
+    },
     async fetchCarsInStock() {
       try {
-        const token = localStorage.getItem('token');
         // Получаем машины в наличии
-        const response = await apiClient.get('/car_in_stock', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await apiClient.get('/car_in_stock');
         const carsInStock = response.data.data;
 
-        // Для каждой машины получаем информацию по car_id из таблицы cars
-        for (const car of carsInStock) {
-          const carDetails = await this.fetchCarDetails(car.car_id);
-          this.cars.push({
-            ...carDetails, // Добавляем модель (name), изображение и другие данные
-            price: car.price, // Добавляем цену из car_in_stock
-          });
-        }
+        // Запрашиваем данные о каждой машине параллельно
+        const carDetailsPromises = carsInStock.map((car) =>
+            this.fetchCarDetails(car.car_id)
+        );
+        const carDetails = await Promise.all(carDetailsPromises);
+
+        // Соединяем данные о машинах и цену из car_in_stock
+        this.cars = carDetails.map((details, index) => ({
+          ...details,
+          price: carsInStock[index].price,
+        }));
       } catch (error) {
         console.error('Ошибка при получении данных о машинах:', error);
+      } finally {
+        this.isLoading = false;
       }
     },
     async fetchCarDetails(carId) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get(`/cars/${carId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await apiClient.get(`/cars/${carId}`);
         return response.data;
       } catch (error) {
         console.error(`Ошибка при получении данных о машине с ID ${carId}:`, error);
@@ -79,8 +91,8 @@ export default {
     },
     buyCar(carId) {
       this.$router.push({ name: 'BuyCarForm', params: { id: carId } }); // Переход на форму покупки
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -135,6 +147,17 @@ export default {
 }
 
 .no-cars-message {
+  font-size: 1.5rem;
+  margin-top: 40px;
+}
+
+.authorization-message {
+  color: #ff3333;
+  font-size: 1.5rem;
+  margin-top: 40px;
+}
+
+.loading-placeholder {
   font-size: 1.5rem;
   margin-top: 40px;
 }

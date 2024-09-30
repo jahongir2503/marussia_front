@@ -6,12 +6,6 @@
         <img :src="car.image" :alt="car.name" class="model-image">
         <h3>{{ car.name }}</h3>
         <p>От <span class="price">{{ car.price }}</span></p>
-        <div class="buttons">
-          <MyButton>Купить</MyButton>
-          <router-link :to="`/models/${car.id}`" class="btn-link">
-            <MyButton>Подробнее</MyButton>
-          </router-link>
-        </div>
       </div>
     </div>
   </section>

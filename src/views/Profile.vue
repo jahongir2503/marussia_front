@@ -1,132 +1,116 @@
 <template>
   <div class="profile-page">
-    <h1>Profile</h1>
-
-    <div class="profile-content">
-      <div class="requests">
-        <h2>Заявки</h2>
-        <div v-if="requests.length">
-          <div v-for="request in requests" :key="request.id" class="request-card">
-            <p><strong>Название:</strong> {{ request.name }}</p>
-            <p><strong>Автомобиль:</strong> {{ request.car_name }}</p>
-            <p><strong>Дата подачи:</strong> {{ request.created_at }}</p>
-            <p><strong>Статус:</strong> {{ request.status }}</p>
-          </div>
-        </div>
-        <p v-else>У вас пока нет заявок или заказов.</p>
-      </div>
-
-      <div class="user-info">
-        <h2>User</h2>
-        <p><strong>ФИО:</strong> {{ user.full_name }}</p>
-        <p><strong>Почта:</strong> {{ user.email }}</p>
-        <p><strong>Тел.:</strong> {{ user.phone }}</p>
-        <button @click="editProfile">Редактировать Профиль</button>
-      </div>
+    <h1>Профиль</h1>
+    <div class="user-info">
+      <h3>{{ userData.name }}</h3>
+      <p>ФИО: {{ userData.fullName }}</p>
+      <p>Почта: {{ userData.email }}</p>
+      <p>Тел.: {{ userData.phone }}</p>
+      <MyButton @click="editProfile" label="Редактировать Профиль">Редактировать Данные</MyButton>
     </div>
 
+    <!-- Если пользователь админ, показываем админские функции -->
+    <div v-if="isAdmin" class="admin-section">
+      <h2>Административные функции</h2>
+      <ul>
+        <li><router-link to="/admin/cars">Управление автомобилями</router-link></li>
+        <li><router-link to="/admin/parts">Управление запчастями</router-link></li>
+        <li><router-link to="/admin/news">Управление новостями</router-link></li>
+        <li><router-link to="/admin/requests">Управление заявками</router-link></li>
+      </ul>
+    </div>
 
+    <!-- Если пользователь обычный, показываем его заявки -->
+    <div v-else>
+      <h2>Мои заявки</h2>
+      <div v-if="userRequests.length">
+        <div v-for="request in userRequests" :key="request.id" class="request-card">
+          <p>Название: {{ request.title }}</p>
+          <p>Автомобиль: {{ request.car }}</p>
+          <p>Дата подачи: {{ request.date }}</p>
+          <p>Статус: {{ request.status }}</p>
+        </div>
+      </div>
+      <p v-else>У вас пока нет заявок.</p>
+    </div>
   </div>
 </template>
 
 <script>
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
-import apiClient from '@/axios'; // Подключаем настроенный axios
+import MyButton from '@/components/UI/Button.vue'; // Кастомная кнопка
+import apiClient from '@/axios'; // axios клиент для API запросов
 
 export default {
   components: {
-    Header,
-    Footer,
+    MyButton
   },
   data() {
     return {
-      user: {
-        full_name: '',
-        email: '',
-        phone: '',
-      },
-      requests: [], // Данные о заявках
+      userData: {}, // Информация о пользователе
+      userRequests: [], // Заявки пользователя
+      isAdmin: false,  // Флаг для проверки администратора
     };
   },
-  mounted() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      this.user = user;
-    } else {
-      this.$router.push('/login'); // Перенаправление на страницу входа, если пользователь не авторизован
-    }
-    this.fetchUserRequests();
+  created() {
+    this.checkUserRole(); // Проверяем роль пользователя
+    this.fetchUserData(); // Получаем данные пользователя
+    this.fetchUserRequests(); // Получаем заявки пользователя
   },
   methods: {
-    async fetchUserRequests() {
+    // Проверяем роль пользователя
+    checkUserRole() {
+      const roleId = localStorage.getItem('role_id'); // Получаем роль из localStorage
+      this.isAdmin = roleId === '1'; // Если роль 1 - администратор
+    },
+    // Получаем данные пользователя
+    async fetchUserData() {
       try {
-        const token = localStorage.getItem('token');
-        const response = await apiClient.get('/requests', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        this.requests = response.data;
+        const userId = localStorage.getItem('user_id');
+        const response = await apiClient.get(`/user/${userId}`);
+        this.userData = response.data;
       } catch (error) {
-        console.error('Ошибка при получении заявок:', error);
+        console.error('Ошибка при загрузке данных пользователя:', error);
       }
     },
+    // Получаем заявки пользователя
+    async fetchUserRequests() {
+      try {
+        const userId = localStorage.getItem('user_id');
+        const response = await apiClient.get(`/requests?user_id=${userId}`);
+        this.userRequests = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке заявок:', error);
+      }
+    },
+    // Переход на страницу редактирования профиля
     editProfile() {
       this.$router.push('/edit-profile');
     }
-  },
+  }
 };
 </script>
 
 <style scoped>
 .profile-page {
-  background-color: black;
+  padding: 100px;
   color: white;
-  padding: 20px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-color: black;
 }
 
-.profile-content {
-  display: flex;
-  justify-content: space-between;
-  width: 80%;
+.user-info {
+  margin-bottom: 30px;
 }
 
-.requests, .user-info {
-  background-color: white;
-  color: black;
-  padding: 20px;
-  border-radius: 10px;
-  width: 45%;
+.admin-section {
+  margin-top: 30px;
 }
 
 .request-card {
-  background-color: #f5f5f5;
-  padding: 10px;
+  background-color: white;
+  color: black;
+  padding: 15px;
   margin-bottom: 10px;
   border-radius: 5px;
-}
-
-button {
-  background-color: #ff3333;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 18px;
-  margin-top: 20px;
-}
-
-button:hover {
-  background-color: #ff6666;
-}
-
-p {
-  margin: 5px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 </style>

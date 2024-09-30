@@ -6,9 +6,6 @@
           <h1>Marussia <span class="highlight">B1</span></h1>
           <p>От 49.999 $</p>
         </div>
-        <router-link to="/models/1" class="btn-link">
-          <MyButton class="promo-button">Подробнее</MyButton>
-        </router-link>
       </div>
     </main>
     <ModelRange  class="model-range"/>
