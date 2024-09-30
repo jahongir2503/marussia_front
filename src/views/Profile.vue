@@ -2,10 +2,11 @@
   <div class="profile-page">
     <h1>Профиль</h1>
     <div class="user-info">
-      <h3>{{ userData.name }}</h3>
-      <p>ФИО: {{ userData.fullName }}</p>
+      <h3>Имя:{{ userData.name }}</h3>
+      <p>Фамилия: {{ userData.surname }}</p>
+      <p>Отчество: {{ userData.last_name }}</p>
       <p>Почта: {{ userData.email }}</p>
-      <p>Тел.: {{ userData.phone }}</p>
+      <p>Тел.: {{ userData.number }}</p>
       <MyButton @click="editProfile" label="Редактировать Профиль">Редактировать Данные</MyButton>
     </div>
 

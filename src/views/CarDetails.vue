@@ -3,7 +3,11 @@
     <h1>{{ car.name }}</h1>
     <div class="car-details">
       <div class="car-image">
-        <img :src="car.image" alt="Car image" />
+        <img
+            :src="car.image ? getImageUrl(car.image) : getPlaceholderImage()"
+            alt="car image"
+            class="car-image"
+        />
       </div>
       <div class="car-info">
         <h2>{{ car.name }}</h2>
@@ -47,6 +51,12 @@ export default {
     await this.fetchCarDetails();
   },
   methods: {
+    getImageUrl(imagePath) {
+      return `http://localhost:8000/storage/${imagePath}`; // Генерация правильного пути к изображениям
+    },
+    getPlaceholderImage() {
+      return require('@/assets/placeholder.png'); // Заглушка, если изображения нет
+    },
     async fetchCarDetails() {
       try {
         // Получаем ID автомобиля из маршрута
@@ -69,7 +79,7 @@ export default {
       try {
         const requestData = {
           car_id: carId,
-          status_id: 1, // Статус "Ожидайте звонка"
+          status_id: 1,
         };
         await apiClient.post('/buy_car', requestData);
         alert('Заявка успешно отправлена! Наши дилеры скоро свяжутся с вами.');

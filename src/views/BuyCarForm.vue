@@ -88,7 +88,7 @@ export default {
 
 <style scoped>
 .buy-car-form {
-  padding: 50px;
+  padding: 100px;
   background-color: black;
   color: white;
   text-align: center;

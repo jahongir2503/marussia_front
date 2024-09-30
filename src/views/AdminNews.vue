@@ -1,62 +1,59 @@
 <template>
   <div class="news-page">
-    <h1>Новости</h1>
-    <MyButton @click="openCreateModal">Добавить новость</MyButton>
+    <h1>News</h1>
+    <MyButton @click="openCreateModal" label="Добавить новость" >Добавить новость</MyButton>
 
-    <!-- Список новостей -->
-    <div class="news-card" v-for="news in newsList" :key="news.id">
+    <div v-for="news in newsList" :key="news.id" class="news-card">
       <p>{{ formatDate(news.created_at) }}</p>
       <h2>{{ news.name }}</h2>
       <p>{{ news.description }}</p>
-      <img v-if="news.image" :src="getImageUrl(news.image)" alt="News image" />
-      <MyButton @click="openEditModal(news)">Изменить</MyButton>
-      <MyButton @click="deleteNews(news.id)">Удалить</MyButton>
+      <img :src="getImageUrl(news.image)" alt="news image" />
+      <MyButton @click="openEditModal(news)" label="Редактировать">Редактировать</MyButton>
+      <MyButton @click="deleteNews(news.id)" label="Удалить" >Удалить</MyButton>
     </div>
+<div class="color">
+  <Modal v-if="isModalOpen" @close="closeModal" is-visible>
+    <h3>{{ isEditing ? 'Редактировать новость' : 'Добавить новость' }}</h3>
+    <form @submit.prevent="submitForm" >
+      <div>
+        <label  for="name">Заголовок новости</label> <br>
+        <input type="text" id="name" v-model="newsForm.name" required>
+      </div>
+      <div>
+        <label for="description">Описание</label> <br>
+        <textarea id="description" v-model="newsForm.description" required></textarea>
+      </div>
+      <div>
+        <label for="image">Изображение</label>
+        <input type="file" id="image" @change="handleFileUpload">
+      </div>
+      <div class="button-group">
+        <Button @click="submitForm" >
+          {{ isEditing ? 'Обновить новость' : 'Создать новость' }}
+        </Button>
+      </div>
+    </form>
+  </Modal>
 
-    <!-- Модальное окно для добавления и редактирования новостей -->
-    <Modal v-if="isModalOpen" @close="closeModal" is-visible>
-      <div class="modal-header">
-        <h3>{{ isEditing ? 'Редактировать новость' : 'Добавить новость' }}</h3>
-      </div>
-      <div class="modal-body">
-        <form @submit.prevent="submitForm">
-          <div class="form-group">
-            <label for="name">Заголовок</label>
-            <input type="text" id="name" v-model="newsForm.name" required />
-          </div>
-          <div class="form-group">
-            <label for="description">Описание</label>
-            <textarea id="description" v-model="newsForm.description" required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="image">Изображение</label>
-            <input type="file" id="image" @change="handleFileUpload" />
-          </div>
-          <div class="form-actions">
-            <MyButton type="submit">{{ isEditing ? 'Обновить новость' : 'Создать новость' }}</MyButton>
-            <MyButton @click="closeModal">Отменить</MyButton>
-          </div>
-        </form>
-      </div>
-    </Modal>
+</div>
   </div>
 </template>
 
 <script>
 import apiClient from '@/axios';
-import MyButton from '@/components/UI/Button.vue'; // Кастомная кнопка
-import Modal from '@/components/UI/Modal.vue'; // Кастомное модальное окно
+import MyButton from '@/components/UI/Button.vue';
+import Modal from '@/components/UI/Modal.vue';
 
 export default {
   components: {
     MyButton,
-    Modal,
+    Modal
   },
   data() {
     return {
-      newsList: [], // Список новостей
-      isModalOpen: false, // Открыто ли модальное окно
-      isEditing: false, // Режим редактирования
+      newsList: [],
+      isModalOpen: false,
+      isEditing: false,
       newsForm: {
         id: null,
         name: '',
@@ -84,7 +81,7 @@ export default {
     },
     openEditModal(news) {
       this.isEditing = true;
-      this.newsForm = { ...news, image: null }; // Заполняем форму данными новости
+      this.newsForm = { ...news, image: null };
       this.isModalOpen = true;
     },
     closeModal() {
@@ -98,21 +95,32 @@ export default {
       const formData = new FormData();
       formData.append('name', this.newsForm.name);
       formData.append('description', this.newsForm.description);
+
+      // Добавление файла изображения, если он выбран
       if (this.newsForm.image) {
         formData.append('image', this.newsForm.image);
       }
 
       try {
+        let response;
         if (this.isEditing) {
           formData.append('_method', 'PATCH');
-          await apiClient.post(`/news/${this.newsForm.id}`, formData);
+          response = await apiClient.post(`/news/${this.newsForm.id}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
         } else {
-          await apiClient.post('/news', formData);
+          response = await apiClient.post('/news', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
         }
         this.fetchNews();
         this.closeModal();
       } catch (error) {
-        console.error('Ошибка при сохранении новости:', error);
+        console.error('Ошибка при отправке формы:', error);
       }
     },
     async deleteNews(id) {
@@ -123,6 +131,9 @@ export default {
         console.error('Ошибка при удалении новости:', error);
       }
     },
+    getImageUrl(imagePath) {
+      return imagePath ? `http://127.0.0.1:8000/storage/${imagePath}` : 'placeholder.jpg'; // Путь к изображению или заглушка
+    },
     formatDate(date) {
       return new Date(date).toLocaleDateString('ru-RU', {
         year: 'numeric',
@@ -130,12 +141,10 @@ export default {
         day: 'numeric',
       });
     },
-    getImageUrl(imagePath) {
-      return `http://127.0.0.1:8000/${imagePath}`; // Используем базовый URL для картинок
-    },
   },
 };
 </script>
+
 
 <style scoped>
 .news-page {
@@ -149,26 +158,47 @@ export default {
   border-radius: 10px;
 }
 
-.form-group {
+.modal-content form div {
   margin-bottom: 15px;
+  width: 100%;
 }
 
-.form-actions {
+.modal-content input[type="text"],
+.modal-content textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.color{
+  color: white;
+}
+
+.modal-content input[type="file"] {
+  width: 100%;
+  padding: 5px;
+
+}
+
+.modal-content button {
+  padding: 10px 20px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background-color: darkred;
+}
+
+.modal-content .button-group {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
-}
-
-img {
-  max-width: 100%;
-  margin-top: 10px;
-}
-
-.modal-header {
-  padding-bottom: 10px;
-}
-
-.modal-body {
-  padding-top: 10px;
+  color: white;
 }
 </style>
