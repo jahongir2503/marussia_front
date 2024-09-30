@@ -11,7 +11,11 @@
     <div v-else-if="isLoading" class="loading-placeholder">Загрузка...</div>
     <div v-else-if="cars.length" class="car-list">
       <div v-for="car in cars" :key="car.id" class="car-card">
-        <img :src="car.image" alt="Car image" class="car-image" />
+        <img
+            :src="car.image ? getImageUrl(car.image) : getPlaceholderImage()"
+            alt="car image"
+            class="car-image"
+        />
         <h3>{{ car.name }}</h3> <!-- Используем поле name как модель автомобиля -->
         <p>От <span class="price">{{ car.price }} $</span></p>
         <div class="buttons">
@@ -49,10 +53,17 @@ export default {
       this.fetchCarsInStock();
     }
   },
+
   methods: {
     checkAuthorization() {
       const token = localStorage.getItem('token');
       this.isAuthorized = !!token; // Если токен есть, пользователь авторизован
+    },
+    getImageUrl(imagePath) {
+      return `http://localhost:8000/storage/${imagePath}`; // Генерация правильного пути к изображениям
+    },
+    getPlaceholderImage() {
+      return require('@/assets/placeholder.png'); // Заглушка, если изображения нет
     },
     async fetchCarsInStock() {
       try {
@@ -71,6 +82,7 @@ export default {
           ...details,
           price: carsInStock[index].price,
         }));
+
       } catch (error) {
         console.error('Ошибка при получении данных о машинах:', error);
       } finally {

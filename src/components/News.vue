@@ -3,7 +3,6 @@
     <h1>Новости</h1>
     <div class="news-grid">
       <div class="news-item" v-for="item in news" :key="item.id">
-        <!-- Проверка наличия изображения, если нет, показываем заглушку -->
         <img
             :src="item.image ? getImageUrl(item.image) : getPlaceholderImage()"
             alt="news image"
@@ -43,8 +42,8 @@ export default {
     },
     // Метод для форматирования даты
     formatDate(date) {
-      const options = {year: 'numeric', month: 'long', day: 'numeric'};
-      return new Date(date).toLocaleDateString('en-GB', options);
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(date).toLocaleDateString('en-GB', options); // Форматируем дату
     },
     // Получаем ссылку на изображение с сервера
     getImageUrl(imagePath) {

@@ -80,6 +80,12 @@ export default {
     this.fetchDetails(); // Загружаем детали при монтировании компонента
     this.fetchCategories(); // Загружаем категории для фильтра
   },
+  getImageUrl(imagePath) {
+    return `http://localhost:8000/storage/${imagePath}`; // Генерация правильного пути к изображениям
+  },
+  getPlaceholderImage() {
+    return require('@/assets/placeholder.png'); // Заглушка, если изображения нет
+  },
   methods: {
     // Загрузка деталей с фильтрацией по категории и поиску
     fetchDetails() {
