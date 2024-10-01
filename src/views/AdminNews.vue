@@ -7,7 +7,7 @@
       <p>{{ formatDate(news.created_at) }}</p>
       <h2>{{ news.name }}</h2>
       <p>{{ news.description }}</p>
-      <img :src="getImageUrl(news.image)" alt="news image" />
+      <img :src="getImageUrl(news.image)" alt="news image" width="250" height="150" />
       <MyButton @click="openEditModal(news)" label="Редактировать">Редактировать</MyButton>
       <MyButton @click="deleteNews(news.id)" label="Удалить" >Удалить</MyButton>
     </div>
@@ -96,7 +96,7 @@ export default {
       formData.append('name', this.newsForm.name);
       formData.append('description', this.newsForm.description);
 
-      // Добавление файла изображения, если он выбран
+
       if (this.newsForm.image) {
         formData.append('image', this.newsForm.image);
       }
@@ -132,7 +132,7 @@ export default {
       }
     },
     getImageUrl(imagePath) {
-      return imagePath ? `http://127.0.0.1:8000/storage/${imagePath}` : 'placeholder.jpg'; // Путь к изображению или заглушка
+      return imagePath ? `http://127.0.0.1:8000/storage/${imagePath}` : 'placeholder.jpg';
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString('ru-RU', {

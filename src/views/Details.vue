@@ -1,232 +1,176 @@
 <template>
   <div class="details-page">
-    <h1>Детали</h1>
+    <div class="header">
+      <h1>Детали</h1>
+      <div class="search-filter">
+        <!-- Поиск по имени -->
+        <input type="text" v-model="searchQuery" @input="filterParts" placeholder="Поиск..." />
+        <button @click="resetSearch">Сбросить поиск</button>
 
-    <!-- Поиск и фильтрация -->
-    <div class="filter-bar">
-      <input
-          v-model="searchQuery"
-          placeholder="Поиск по названию..."
-          class="search-input"
-      />
-      <MyButton @click="filterItems" class="search-button">Поиск</MyButton>
-
-      <div class="filtering">
-        <select v-model="selectedCategoryId">
-          <option value="">Все категории</option>
-          <option v-for="category in categories" :key="category.id" :value="category.id">
+        <!-- Фильтр по категориям -->
+        <select v-model="selectedCategory" @change="filterParts">
+          <option value="">Фильтр</option>
+          <option v-for="category in categoriesList" :key="category.id" :value="category.id">
             {{ category.name }}
           </option>
         </select>
-      </div>
-
-      <!-- Кнопки сброса -->
-      <div v-if="isSearchApplied || isFilterApplied" class="reset-buttons">
-        <MyButton v-if="isSearchApplied" @click="resetSearch" class="reset-button">Сбросить Поиск</MyButton>
-        <MyButton v-if="isFilterApplied" @click="resetFilter" class="reset-button">Сбросить Фильтр</MyButton>
+        <button @click="resetFilters">Сбросить фильтр</button>
       </div>
     </div>
 
-    <!-- Список карточек деталей -->
-    <div v-if="filteredDetails.length > 0" class="details-grid">
-      <div class="detail-card" v-for="detail in filteredDetails" :key="detail.id">
-        <img :src="detail.image || placeholderImage" alt="Detail image" />
-        <h3>{{ detail.name }}</h3>
-        <p>From {{ detail.price }} ₽</p>
-        <MyButton @click="openDetailModal(detail)" class="more-button">Подробнее</MyButton>
+    <!-- Список деталей -->
+    <div class="parts-grid">
+      <div v-for="part in filteredPartsList" :key="part.id" class="part-card">
+        <img :src="getImageUrl(part.image)" alt="image" class="part-image" />
+        <h2>{{ part.name }}</h2>
+        <p>Категория: {{ getCategoryName(part.categories_id) }}</p>
+        <p>Цена: {{ part.price }} $</p>
+        <MyButton @click="viewDetails(part.id)" label="Подробнее">Подробнее</MyButton>
       </div>
     </div>
-    <p v-else>Детали не найдены.</p>
-
-    <!-- Модальное окно с подробной информацией о детали -->
-    <Modal v-if="isDetailModalOpen" @close="closeDetailModal" is-visible>
-      <div class="detail-modal-content">
-        <h2>{{ selectedDetail.name }}</h2>
-        <img :src="selectedDetail.image || placeholderImage" alt="Detail image" />
-        <p><strong>Цена:</strong> {{ selectedDetail.price }} ₽</p>
-        <p><strong>Категория:</strong> {{ selectedDetail.category.name }}</p>
-        <p><strong>Описание:</strong> {{ selectedDetail.description }}</p>
-        <MyButton @click="addToCart(selectedDetail)">Добавить в корзину</MyButton>
-      </div>
-    </Modal>
   </div>
 </template>
 
 <script>
-import MyButton from "@/components/UI/Button.vue";
-import Modal from "@/components/UI/Modal.vue";
-import apiClient from "@/axios";
+import apiClient from '@/axios';
+import MyButton from '@/components/UI/Button.vue';
 
 export default {
   components: {
     MyButton,
-    Modal
   },
   data() {
     return {
-      details: [], // Список деталей
+      partsList: [], // Все детали
+      filteredPartsList: [], // Отфильтрованные детали
+      categoriesList: [], // Список категорий
       searchQuery: '', // Поисковый запрос
-      selectedCategoryId: '', // Выбранная категория
-      filteredDetails: [], // Отфильтрованные детали
-      isDetailModalOpen: false, // Статус открытия модального окна
-      selectedDetail: null, // Выбранная деталь для модального окна
-      placeholderImage: 'https://via.placeholder.com/150', // Placeholder для изображений
-      isSearchApplied: false, // Статус, показывающий, был ли применен поиск
-      isFilterApplied: false, // Статус, показывающий, была ли применена фильтрация
-      categories: [] // Список категорий
+      selectedCategory: '', // Выбранная категория для фильтрации
     };
   },
-  mounted() {
-    this.fetchDetails(); // Загружаем детали при монтировании компонента
-    this.fetchCategories(); // Загружаем категории для фильтра
-  },
-  getImageUrl(imagePath) {
-    return `http://localhost:8000/storage/${imagePath}`; // Генерация правильного пути к изображениям
-  },
-  getPlaceholderImage() {
-    return require('@/assets/placeholder.png'); // Заглушка, если изображения нет
+  created() {
+    this.fetchParts();
+    this.fetchCategories(); // Загружаем категории
   },
   methods: {
-    // Загрузка деталей с фильтрацией по категории и поиску
-    fetchDetails() {
-      let queryParams = [];
-
-      // Если в строку поиска введено значение, добавляем его к запросу
-      if (this.searchQuery) {
-        queryParams.push(`name=${this.searchQuery}`);
-        this.isSearchApplied = true;
-      } else {
-        this.isSearchApplied = false;
+    async fetchParts() {
+      try {
+        const response = await apiClient.get('/spare_part');
+        this.partsList = response.data.data;
+        this.filteredPartsList = this.partsList; // Изначально все детали
+      } catch (error) {
+        console.error('Ошибка при загрузке деталей:', error);
       }
-
-      // Если выбрана категория, добавляем параметр категории (categories_id)
-      if (this.selectedCategoryId) {
-        queryParams.push(`categories_id=${this.selectedCategoryId}`);
-        this.isFilterApplied = true;
-      } else {
-        this.isFilterApplied = false;
+    },
+    async fetchCategories() {
+      try {
+        const response = await apiClient.get('/spare_parts_categories');
+        this.categoriesList = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке категорий:', error);
       }
-
-      // Выполняем запрос на детали с фильтрацией по категории и поиску
-      const queryString = queryParams.length ? `?${queryParams.join('&')}` : '';
-      apiClient.get(`/spare_part${queryString}`)
-          .then(response => {
-            this.details = response.data.data;
-            this.filteredDetails = this.details;
-          })
-          .catch(error => {
-            console.error('Ошибка при загрузке деталей:', error);
-          });
     },
-
-    // Загрузка категорий для фильтра
-    fetchCategories() {
-      apiClient.get('/categories')
-          .then(response => {
-            this.categories = response.data;
-          })
-          .catch(error => {
-            console.error('Ошибка при загрузке категорий:', error);
-          });
+    filterParts() {
+      const searchLower = this.searchQuery.toLowerCase();
+      this.filteredPartsList = this.partsList.filter(part => {
+        const matchesName = part.name.toLowerCase().includes(searchLower);
+        const matchesCategory =
+            this.selectedCategory === '' || part.categories_id === parseInt(this.selectedCategory);
+        return matchesName && matchesCategory;
+      });
     },
-
-    // Применение фильтрации и поиска
-    filterItems() {
-      this.fetchDetails(); // Заново загружаем данные с фильтрацией и поиском
-    },
-
-    // Сброс поиска
     resetSearch() {
       this.searchQuery = '';
-      this.isSearchApplied = false;
-      this.fetchDetails(); // Загрузка данных без поиска
+      this.filterParts();
     },
-
-    // Сброс фильтрации
-    resetFilter() {
-      this.selectedCategoryId = '';
-      this.isFilterApplied = false;
-      this.fetchDetails(); // Загрузка данных без фильтра
+    resetFilters() {
+      this.selectedCategory = '';
+      this.filterParts();
     },
-
-    // Открытие модального окна с детальной информацией
-    openDetailModal(detail) {
-      this.selectedDetail = detail;
-      this.isDetailModalOpen = true;
+    getCategoryName(id) {
+      const category = this.categoriesList.find(cat => cat.id === id);
+      return category ? category.name : 'Неизвестная категория';
     },
-
-    // Закрытие модального окна
-    closeDetailModal() {
-      this.isDetailModalOpen = false;
+    getImageUrl(imagePath) {
+      return imagePath ? `http://127.0.0.1:8000/storage/${imagePath}` : 'placeholder.jpg';
     },
-
-    // Добавление детали в корзину
-    addToCart(detail) {
-      apiClient.post(`/cart/${detail.id}`, { quantity: 1 })
-          .then(() => {
-            alert('Товар добавлен в корзину');
-          })
-          .catch(error => {
-            console.error('Ошибка при добавлении в корзину:', error);
-          });
+    viewDetails(partId) {
+      this.$router.push(`/part-details/${partId}`);
     }
   }
 };
 </script>
 
-
-
-
-
 <style scoped>
 .details-page {
-  text-align: center;
-  color: white;
   padding: 100px;
+  background-color: black;
+  color: white;
 }
 
-.filter-bar {
+.header {
   display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.search-input {
-  padding: 10px;
-  font-size: 1rem;
+.search-filter {
+  display: flex;
+  align-items: center;
+}
+
+.search-filter input,
+.search-filter select {
+  padding: 8px;
   margin-right: 10px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 5px;
 }
 
-.reset-buttons {
-  margin-left: 20px;
+button {
+  padding: 8px 12px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.details-grid {
+.parts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  padding: 20px;
+  margin-top: 20px;
 }
 
-.detail-card {
+.part-card {
   background-color: white;
   color: black;
   padding: 20px;
-  border-radius: 10px;
   text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.detail-card img {
-  max-width: 100%;
-  height: auto;
+.part-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
   margin-bottom: 10px;
 }
 
-.detail-modal-content {
-  text-align: center;
+h2 {
+  font-size: 1.2rem;
+  margin: 10px 0;
 }
 
-.more-button {
+p {
+  margin: 5px 0;
+}
+
+.MyButton {
   margin-top: 10px;
 }
 </style>
