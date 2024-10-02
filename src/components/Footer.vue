@@ -11,9 +11,9 @@
       <p>8 889 889-89-72</p>
       <p>Наши социальные сети</p>
       <div class="social-icons">
-        <a href="#"><img src="@/assets/car-image.png" alt="Instagram"></a>
-        <a href="#"><img src="@/assets/car-image.png" alt="Facebook"></a>
-        <a href="#"><img src="@/assets/car-image.png" alt="VK"></a>
+        <a href="@/assets/inst.png"><img src="@/assets/inst.png" alt="Instagram"></a>
+        <a href="@/assets/face.png"><img src="@/assets/face.png" alt="Facebook"></a>
+        <a href="@/assets/face.png"><img src="@/assets/vk.png" alt="VK"></a>
       </div>
     </div>
   </footer>

@@ -3,15 +3,15 @@
     <h2>Услуги для владельцев</h2>
     <div class="service-cards">
       <router-link to="/service" class="service-card">
-        <img src="#" alt="Регистрация на ТО" />
+        <img src="@/assets/T.o.png" alt="Регистрация на ТО" />
         <p>Регистрация на Т.О.</p>
       </router-link>
       <router-link to="/roadside-assistance" class="service-card">
-        <img src="#" alt="Помощь на дороге" />
+        <img src="@/assets/Help.wey.png" alt="Помощь на дороге" />
         <p>Помощь на дороге</p>
       </router-link>
       <router-link to="/warranty" class="service-card">
-        <img src="@/assets/car-image.png" alt="Гарантийные условия" />
+        <img src="@/assets/candition.png" alt="Гарантийные условия" />
         <p>Гарантийные условия</p>
       </router-link>
     </div>

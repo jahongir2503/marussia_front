@@ -6,11 +6,13 @@ import Profile from '@/views/Profile.vue';
 import Register from "@/views/Register.vue";
 import SelectCar from '@/views/SelectCar.vue';
 import Details from "@/views/Details.vue";
+import warranty from "@/views/warranty.vue";
 
 const routes = [
     { path: '/', name: 'Home', component: Home },
     { path: '/stock', name: 'CarsInStock', component: CarsInStock },
     { path: '/AboutUs', name: 'AboutUs', component: AboutUs },
+    { path: '/warranty', name: 'warranty', component: warranty },
     { path: '/register', name: 'Register', component: Register },
     { path: '/profile', name: 'Profile', component: Profile, meta: { requiresAuth: true } },
     { path: '/car-select', name: 'CarSelect', component: SelectCar },

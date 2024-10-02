@@ -22,8 +22,8 @@ export default {
   data() {
     return {
       cars: [
-        { id: 1, name: "Marussia B1", price: "39,999 $", image: require('@/assets/car-image.png') },
-        { id: 2, name: "Marussia B2", price: "49,999 $", image: require('@/assets/car-image.png') }
+        { id: 1, name: "Marussia B1", price: "39,999 $", image: require('@/assets/cattouchret 1.png') },
+        { id: 2, name: "Marussia B2", price: "49,999 $", image: require('@/assets/marussia-b2.png') }
       ]
     };
   }
